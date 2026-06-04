@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Second Brain</title>
+  <style>
+    :root{--line:#24324d;--text:#eef4ff;--muted:#92a3c5;--accent:#7c3aed;--accent2:#22d3ee;--gold:#f6d365}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:radial-gradient(circle at top,#162847,#07111f 58%);color:var(--text);overflow:hidden}
+    .app{display:grid;grid-template-columns:var(--sidebar-w,360px) 8px 1fr;height:100vh}
+    .panel{background:rgba(9,14,28,.92);border-right:1px solid var(--line);overflow:auto;padding:18px 16px;min-width:240px}
+    .sidebar-resizer{background:linear-gradient(180deg,rgba(36,50,77,.9),rgba(16,27,45,.9));cursor:col-resize;position:relative}
+    .sidebar-resizer::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:3px;height:56px;border-radius:999px;background:rgba(34,211,238,.5)}
+    .app.sidebar-hidden{grid-template-columns:0 0 1fr}
+    .app.sidebar-hidden .panel,.app.sidebar-hidden .sidebar-resizer{display:none}
+    .left-top{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+    .icon-btn{width:auto;padding:6px 10px;background:#15203a;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+    .floating-sidebar-toggle{position:absolute;left:14px;top:14px;z-index:7;width:auto;padding:8px 12px;background:rgba(21,32,58,.92);border:1px solid var(--line);border-radius:12px;color:var(--text);cursor:pointer}
+    .hidden{display:none !important}
+    .main{position:relative}
+    .brand{display:flex;align-items:center;gap:10px;margin-bottom:12px}.dot-brand{width:12px;height:12px;border-radius:999px;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 0 18px rgba(124,58,237,.8)}
+    .title{font-size:22px;font-weight:800}.sub{color:var(--muted);font-size:13px}
+    .card{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:18px;padding:14px}
+    input,textarea,button{width:100%;border-radius:12px;border:1px solid var(--line);padding:10px;background:#0d152b;color:var(--text)}
+    textarea{min-height:92px;resize:vertical} button{background:linear-gradient(135deg,var(--accent),#4f46e5);font-weight:800;cursor:pointer}
+    .mini-btn{width:auto;padding:6px 10px;background:#15203a}
+    .quick{display:flex;gap:8px;margin-top:8px}
+    .drop-zone{margin-top:10px;border:1px dashed #3b4f7a;border-radius:12px;padding:10px;text-align:center;color:var(--muted);font-size:12px}
+    .drop-zone.drag{border-color:var(--accent2);background:rgba(34,211,238,.08)}
+    .tree{margin-top:14px}.topic{border:1px solid var(--line);border-radius:12px;margin-bottom:9px;background:rgba(255,255,255,.02)}
+    .topic-head{display:flex;align-items:center;gap:8px;padding:9px 10px;cursor:pointer}
+    .caret{font-size:11px;color:var(--muted)} .topic-title{font-weight:700;flex:1}
+    .topic-tags{font-size:11px;color:#ddd6fe}
+    .children{padding:0 8px 8px 8px}
+    .note-row{display:flex;gap:6px;align-items:center;justify-content:space-between;background:rgba(255,255,255,.03);border:1px solid var(--line);padding:8px;border-radius:10px;margin-top:6px}
+    .name{cursor:pointer;font-size:13px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .graph-wrap{position:absolute;inset:0;padding-top:0}
+    #graphCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+    #graphArea{position:absolute;inset:0;z-index:3}
+    .brain-core{position:absolute;transform:translate(-50%,-50%);width:80px;height:80px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(124,58,237,.18);border:2px solid rgba(34,211,238,.55);color:#fff;font-size:13px;font-weight:800;box-shadow:0 0 30px rgba(34,211,238,.18);z-index:2}
+    .g-node{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:999px;background:rgba(13,21,43,.74);border:1px solid rgba(124,58,237,.25);cursor:grab}
+    .g-node.active{border-color:var(--accent2)} .g-dot{width:12px;height:12px;border-radius:999px;background:radial-gradient(circle at 30% 30%,#fff,var(--accent2),var(--accent))}
+    .g-label{font-size:13px;font-weight:700;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .detail-drawer{position:absolute;top:96px;right:22px;width:min(420px,40vw);max-height:calc(100vh - 120px);overflow:auto;background:rgba(9,14,28,.94);border:1px solid var(--line);border-radius:22px;padding:18px;z-index:8;display:none}
+    .detail-drawer.open{display:block}.tag{display:inline-block;padding:4px 9px;border-radius:999px;background:rgba(124,58,237,.16);margin:0 5px 5px 0;font-size:12px}
+  </style>
+</head>
+<body>
+<div id="app" class="app">
+  <aside id="sidebar" class="panel">
+    <div class="brand"><div class="dot-brand"></div><div><div class="title">Second Brain</div><div class="sub">Tree + Graph</div></div></div>
+    <div class="left-top">
+      <button class="icon-btn" onclick="toggleComposer()">📝 Ghi chú</button>
+      <button class="icon-btn" onclick="toggleSearch()">🔍 Tìm</button>
+    </div>
+    <div id="leftSearchWrap" class="hidden" style="margin-bottom:10px"><input id="search" placeholder="Tìm node/nội dung..." oninput="renderAll()"/></div>
+    <div id="composer" class="card">
+      <select id="categorySelect" style="margin-bottom:8px" onchange="if(this.value) document.getElementById('category').value=this.value">
+        <option value="">Chọn category có sẵn...</option>
+      </select>
+      <input id="category" list="categorySuggestions" placeholder="Category" />
+      <datalist id="categorySuggestions"></datalist>
+      <div style="height:8px"></div>
+      <input id="title" list="titleSuggestions" placeholder="Chủ đề ghi chú" />
+      <datalist id="titleSuggestions"></datalist>
+      <div style="height:8px"></div>
+      <input id="tags" list="tagSuggestions" placeholder="tags: course,concept,landing" />
+      <datalist id="tagSuggestions"></datalist>
+      <div style="height:8px"></div>
+      <textarea id="content" placeholder="Nội dung con..."></textarea>
+      <div class="quick">
+        <button onclick="saveNote()">Lưu</button>
+        <button class="mini-btn" onclick="document.getElementById('fileInput').click()">Tải file</button>
+      </div>
+      <input id="fileInput" type="file" accept=".txt,.md,.json" style="display:none" onchange="importFile(event)" />
+      <div id="dropZone" class="drop-zone">Kéo thả file .txt/.md/.json vào đây</div>
+    </div>
+    <div class="tree" id="tree"></div>
+  </aside>
+  <div id="sidebarResizer" class="sidebar-resizer"></div>
+  <main class="main">
+    <button id="sidebarToggle" class="floating-sidebar-toggle" onclick="toggleSidebar()">☰ Menu</button>
+    <div class="graph-wrap"><canvas id="graphCanvas"></canvas><div id="brainCore" class="brain-core">BRAIN</div><div id="graphArea"></div><div id="detailDrawer" class="detail-drawer"></div></div>
+  </main>
+</div>
+<script>
+const KEY='second_brain_notes_v4', POS='second_brain_positions_v4', BRAIN_POS='second_brain_brain_pos_v1'; let selectedId=null; let collapsed={}; let draggingId=null; let apiReady=false; let composing=true; let searching=false; let sidebarWidth=Number(localStorage.getItem('second_brain_sidebar_w')||360); let resizingSidebar=false; let resizeObserver=null; let rerenderTimer=null; let lastNodeClick={id:null,ts:0}; let pendingNodeClickTimer=null;
+function seed(){
+  if(localStorage.getItem(KEY)) return;
+  const legacyKeys=['second_brain_notes_v3','second_brain_notes_v2','second_brain_notes'];
+  for(const k of legacyKeys){
+    const legacy=localStorage.getItem(k);
+    if(legacy){ localStorage.setItem(KEY, legacy); return; }
+  }
+  const now=new Date().toISOString();
+  localStorage.setItem(KEY,JSON.stringify([
+    {id:'n1',title:'Openclaw',content:'Agent runtime notes',tags:['agent','runtime'],created_at:now,updated_at:now},
+    {id:'n2',title:'Openclaw',content:'Skill workflow',tags:['skill','runtime'],created_at:now,updated_at:now},
+    {id:'n3',title:'Landing',content:'Mobile hero rule',tags:['landing','css'],created_at:now,updated_at:now}
+  ]));
+}
+const getNotes=()=>{seed();return JSON.parse(localStorage.getItem(KEY)||'[]')}; const setNotes=n=>localStorage.setItem(KEY,JSON.stringify(n));
+async function loadServerNotes(){
+  try{ const r=await fetch('/.netlify/functions/list-notes'); if(!r.ok) return; const remote=await r.json();
+    const local=getNotes(); const byId=new Map(local.map(x=>[x.id,x]));
+    for(const n of remote){ if(!byId.has(n.id)) byId.set(n.id,n); }
+    setNotes([...byId.values()]); apiReady=true;
+  }catch{}
+}
+async function pushServerNote(note){
+  try{ await fetch('/.netlify/functions/add-note',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(note)}); apiReady=true; }catch{}
+}
+const getPos=()=>JSON.parse(localStorage.getItem(POS)||'{}'); const setPos=p=>localStorage.setItem(POS,JSON.stringify(p));
+function qNotes(){const q=((document.getElementById('search')||{}).value||'').toLowerCase(); return getNotes().filter(n=>!q||[n.title,n.content,(n.tags||[]).join(' ')].join(' ').toLowerCase().includes(q));}
+function groupByCategoryTitle(notes){const g={}; for(const n of notes){const c=(n.category||'General').trim()||'General'; const t=(n.title||'Untitled').trim()||'Untitled'; ((g[c]??={})[t]??=[]).push(n);} return g;}
+function refreshSuggestions(){const notes=getNotes(); const categories=[...new Set(notes.map(n=>(n.category||'General').trim()).filter(Boolean))]; const titles=[...new Set(notes.map(n=>n.title).filter(Boolean))]; const tags=[...new Set(notes.flatMap(n=>n.tags||[]).filter(Boolean))]; document.getElementById('categorySuggestions').innerHTML=categories.map(t=>`<option value="${t}">`).join(''); const sel=document.getElementById('categorySelect'); if(sel){ const cur=sel.value; sel.innerHTML=`<option value="">Chọn category có sẵn...</option>`+categories.map(t=>`<option value="${t}">${t}</option>`).join(''); if(cur && categories.includes(cur)) sel.value=cur; } document.getElementById('titleSuggestions').innerHTML=titles.map(t=>`<option value="${t}">`).join(''); document.getElementById('tagSuggestions').innerHTML=tags.map(t=>`<option value="${t}">`).join('');}
+function renderTree(){const box=document.getElementById('tree'); box.innerHTML=''; const groups=groupByCategoryTitle(qNotes()); Object.keys(groups).sort().forEach(category=>{ const catKey='cat:'+category; const catCollapsed=!!collapsed[catKey]; const catWrap=document.createElement('div'); catWrap.className='topic'; catWrap.innerHTML=`<div class="topic-head"><div class="caret">${catCollapsed?'▶':'▼'}</div><div class="topic-title">${category}</div><div class="topic-tags">Category</div></div><div class="children" style="display:${catCollapsed?'none':'block'}"></div>`; const catChildren=catWrap.querySelector('.children'); Object.keys(groups[category]).sort().forEach(title=>{ const items=groups[category][title]; const tagSet=[...new Set(items.flatMap(n=>n.tags||[]))]; const topicKey='topic:'+category+'::'+title; const isCollapsed=!!collapsed[topicKey]; const wrap=document.createElement('div'); wrap.className='topic'; wrap.style.margin='8px 0 0 0'; wrap.innerHTML=`<div class="topic-head"><div class="caret">${isCollapsed?'▶':'▼'}</div><div class="topic-title">${title}</div><div class="topic-tags">${tagSet.slice(0,3).map(t=>'#'+t).join(' ')}</div></div><div class="children" style="display:${isCollapsed?'none':'block'}"></div>`; const children=wrap.querySelector('.children'); items.forEach(n=>{ const row=document.createElement('div'); row.className='note-row'; row.innerHTML=`<div class="name">${n.content.slice(0,44)||'(trống)'}</div><div><button class="mini-btn" onclick="event.stopPropagation();editNote('${n.id}')">Sửa</button><button class="mini-btn" onclick="event.stopPropagation();deleteNote('${n.id}')">Xóa</button></div>`; row.querySelector('.name').onclick=()=>focusNode(n.id,true); children.appendChild(row); }); wrap.querySelector('.topic-head').onclick=(e)=>{e.stopPropagation(); collapsed[topicKey]=!collapsed[topicKey]; renderTree();}; catChildren.appendChild(wrap); }); catWrap.querySelector('.topic-head').onclick=()=>{collapsed[catKey]=!collapsed[catKey]; renderTree();}; box.appendChild(catWrap); });}
+function getGraphMetrics(){
+  const wrap=document.querySelector('.graph-wrap');
+  const area=document.getElementById('graphArea');
+  const rectA=area?.getBoundingClientRect();
+  const rectW=wrap?.getBoundingClientRect();
+  const main=document.querySelector('.main')?.getBoundingClientRect();
+  const wRaw=Math.round(rectA?.width||rectW?.width||main?.width||window.innerWidth||0);
+  const hRaw=Math.round(rectA?.height||rectW?.height||main?.height||window.innerHeight||0);
+  const w=Math.max(320,wRaw), h=Math.max(320,hRaw);
+  return {w,h,cx:w*0.5,cy:h*0.52,nodeCy:h*0.58};
+}
+function getBrainPos(){ try{ return JSON.parse(localStorage.getItem(BRAIN_POS)||'null'); }catch{ return null; } }
+function setBrainPos(p){ localStorage.setItem(BRAIN_POS, JSON.stringify(p)); }
+function ensurePos(notes){const pos=getPos(); const {cx,nodeCy}=getGraphMetrics(); const radius=Math.min(280, 120+notes.length*16); notes.forEach((n,i)=>{ const a=(Math.PI*2*i)/Math.max(notes.length,1); if(!pos[n.id]){ pos[n.id]={x:cx+Math.cos(a)*radius,y:nodeCy+Math.sin(a)*radius*0.58,vx:(Math.random()-.5)*0.2,vy:(Math.random()-.5)*0.2}; } if(!Number.isFinite(pos[n.id].x)||!Number.isFinite(pos[n.id].y)){ pos[n.id].x=cx+Math.cos(a)*radius; pos[n.id].y=nodeCy+Math.sin(a)*radius*0.58; pos[n.id].vx=0; pos[n.id].vy=0; } }); setPos(pos); return pos; }
+function drawLinks(notes,pos,canvas,center){ const {w,h}=getGraphMetrics(); const dpr=window.devicePixelRatio||1; canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr); canvas.style.width=w+'px'; canvas.style.height=h+'px'; const ctx=canvas.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h); ctx.lineCap='round'; for(const n of notes){ ctx.strokeStyle='rgba(120,170,255,0.55)'; ctx.lineWidth=1.8; ctx.beginPath(); ctx.moveTo(center.x,center.y); ctx.lineTo(pos[n.id].x,pos[n.id].y); ctx.stroke(); } for(let i=0;i<notes.length;i++)for(let j=i+1;j<notes.length;j++){ const a=notes[i],b=notes[j],shared=(a.tags||[]).filter(t=>(b.tags||[]).includes(t)).length; if(shared){ ctx.strokeStyle='rgba(167,139,250,0.45)'; ctx.lineWidth=1.4+shared*.9; ctx.beginPath(); ctx.moveTo(pos[a.id].x,pos[a.id].y); ctx.lineTo(pos[b.id].x,pos[b.id].y); ctx.stroke(); } }}
+function renderDetail(note){const d=document.getElementById('detailDrawer'); if(!note){d.classList.remove('open');d.innerHTML='';return;} d.innerHTML=`<div style='display:flex;justify-content:space-between;align-items:center'><b>${note.title}</b><button class='mini-btn' onclick='renderDetail(null)'>Ẩn</button></div><div style='margin:8px 0'>${(note.tags||[]).map(t=>`<span class='tag'>#${t}</span>`).join('')}</div><div style='white-space:pre-wrap;line-height:1.6'>${note.content}</div>`; d.classList.add('open');}
+function renderGraph(){const notes=qNotes(); const area=document.getElementById('graphArea'), canvas=document.getElementById('graphCanvas'); area.innerHTML=''; const pos=ensurePos(notes); const {cx,cy,w,h}=getGraphMetrics(); const savedBrain=getBrainPos(); const center={x:Math.max(60,Math.min(w-60,savedBrain?.x ?? cx)),y:Math.max(60,Math.min(h-60,savedBrain?.y ?? cy))}; const brain=document.getElementById('brainCore'); brain.style.left=center.x+'px'; brain.style.top=center.y+'px'; drawLinks(notes,pos,canvas,center); notes.forEach(n=>{const el=document.createElement('div'); el.className='g-node'+(selectedId===n.id?' active':''); el.dataset.id=n.id; el.style.left=pos[n.id].x+'px'; el.style.top=pos[n.id].y+'px'; el.innerHTML=`<div class='g-dot'></div><div class='g-label'>${n.title}</div>`; el.onclick=()=>{selectedId=n.id;}; makeDrag(el); area.appendChild(el);}); animate(notes,pos);} 
+let token=0; function animate(notes,pos){const t=++token; function step(){if(t!==token)return; const {cx,cy,nodeCy,w,h}=getGraphMetrics(); const savedBrain=getBrainPos(); const center={x:Math.max(60,Math.min(w-60,savedBrain?.x ?? cx)),y:Math.max(60,Math.min(h-60,savedBrain?.y ?? cy))}; for(let i=0;i<notes.length;i++){const a=notes[i],pa=pos[a.id]; if(selectedId===a.id||draggingId===a.id)continue; for(let j=i+1;j<notes.length;j++){const b=notes[j],pb=pos[b.id]; const dx=pb.x-pa.x,dy=pb.y-pa.y,dist=Math.max(60,Math.hypot(dx,dy)); const repel=1900/(dist*dist); pa.vx-=(dx/dist)*repel; pa.vy-=(dy/dist)*repel; pb.vx+=(dx/dist)*repel; pb.vy+=(dy/dist)*repel;} pa.vx+=(center.x-pa.x)*0.00008; pa.vy+=(Math.max(center.y+40,nodeCy)-pa.y)*0.00006; pa.vx*=0.96; pa.vy*=0.96; pa.x+=pa.vx; pa.y+=pa.vy;} setPos(pos); const canvas=document.getElementById('graphCanvas'); drawLinks(notes,pos,canvas,center); document.querySelectorAll('.g-node').forEach(el=>{const p=pos[el.dataset.id]; if(p){el.style.left=p.x+'px';el.style.top=p.y+'px';}}); requestAnimationFrame(step);} requestAnimationFrame(step)}
+function makeDrag(el){
+  let sx=0,sy=0,ox=0,oy=0,d=false,ps=null,moved=false;
+  const openNodeDetail=()=>{
+    const note=getNotes().find(n=>n.id===el.dataset.id);
+    if(!note) return;
+    selectedId=note.id;
+    toggleSidebar(true);
+    setTimeout(()=>{ renderDetail(note); renderGraph(); }, 120);
+  };
+  el.onmousedown=(e)=>{
+    e.preventDefault();
+    d=true; moved=false; draggingId=el.dataset.id;
+    sx=e.clientX; sy=e.clientY;
+    ps=getPos();
+    const p=ps[el.dataset.id]||{x:0,y:0,vx:0,vy:0};
+    ox=p.x; oy=p.y;
+    document.onmousemove=(m)=>{
+      if(!d) return;
+      const nx=ox+(m.clientX-sx), ny=oy+(m.clientY-sy);
+      if(Math.abs(m.clientX-sx)>4 || Math.abs(m.clientY-sy)>4) moved=true;
+      ps[el.dataset.id].x=nx; ps[el.dataset.id].y=ny; ps[el.dataset.id].vx=0; ps[el.dataset.id].vy=0;
+      el.style.left=nx+'px'; el.style.top=ny+'px';
+      const {cx,cy,w,h}=getGraphMetrics(); const savedBrain=getBrainPos(); const center={x:Math.max(60,Math.min(w-60,savedBrain?.x ?? cx)),y:Math.max(60,Math.min(h-60,savedBrain?.y ?? cy))};
+      drawLinks(qNotes(), ps, document.getElementById('graphCanvas'), center);
+    };
+    document.onmouseup=()=>{
+      d=false; draggingId=null;
+      setPos(ps);
+      document.onmousemove=null; document.onmouseup=null;
+      if(moved){ renderGraph(); return; }
+      const now=Date.now();
+      if(lastNodeClick.id===el.dataset.id && now-lastNodeClick.ts<360){
+        if(pendingNodeClickTimer){ clearTimeout(pendingNodeClickTimer); pendingNodeClickTimer=null; }
+        lastNodeClick={id:null,ts:0};
+        openNodeDetail();
+        return;
+      }
+      lastNodeClick={id:el.dataset.id,ts:now};
+      if(pendingNodeClickTimer) clearTimeout(pendingNodeClickTimer);
+      pendingNodeClickTimer=setTimeout(()=>{
+        selectedId=el.dataset.id;
+        renderGraph();
+        pendingNodeClickTimer=null;
+      }, 220);
+    };
+  };
+  el.ondblclick=(e)=>{ e.preventDefault(); e.stopPropagation(); openNodeDetail(); };
+}
+function saveNote(pref={}){const category=(pref.category??document.getElementById('category')?.value||'General').trim()||'General', title=(pref.title??document.getElementById('title').value).trim(), tagsRaw=(pref.tags??document.getElementById('tags').value), content=(pref.content??document.getElementById('content').value).trim(); const tags=Array.isArray(tagsRaw)?tagsRaw:tagsRaw.split(',').map(s=>s.trim()).filter(Boolean); if(!title||!content)return alert('Thiếu chủ đề hoặc nội dung'); const notes=getNotes(); const now=new Date().toISOString(); const note={id:'n'+Date.now()+Math.floor(Math.random()*1000),category,title,content,tags,created_at:now,updated_at:now}; notes.push(note); setNotes(notes); pushServerNote(note); document.getElementById('content').value=''; refreshSuggestions(); renderAll();}
+function editNote(id){const notes=getNotes(),n=notes.find(x=>x.id===id); if(!n)return; const title=prompt('Sửa chủ đề',n.title); if(title===null)return; const c=prompt('Sửa nội dung',n.content); if(c===null)return; const tg=prompt('Sửa tags', (n.tags||[]).join(',')); n.title=title.trim(); n.content=c.trim(); n.tags=(tg||'').split(',').map(s=>s.trim()).filter(Boolean); n.updated_at=new Date().toISOString(); setNotes(notes); refreshSuggestions(); renderAll();}
+function deleteNote(id){if(!confirm('Xóa ghi chú này?'))return; const notes=getNotes().filter(n=>n.id!==id); setNotes(notes); const pos=getPos(); delete pos[id]; setPos(pos); if(selectedId===id){selectedId=null;renderDetail(null)} refreshSuggestions(); renderAll();}
+function focusNode(id, openDetail=false){selectedId=id; const note=getNotes().find(n=>n.id===id); if(openDetail && note) renderDetail(note); renderAll();}
+function importFile(ev){const f=ev.target.files?.[0]; if(!f)return; readFileToNote(f); ev.target.value='';}
+function readFileToNote(file){
+  if(file.size > 1024*1024) return alert('File >1MB dễ gây lag, anh tách nhỏ giúp em nhé.');
+  const ext=file.name.split('.').pop().toLowerCase();
+  const reader=new FileReader();
+  reader.onload=()=>{
+    let t=String(reader.result||'').replace(/^\uFEFF/, '');
+    try{ t = decodeURIComponent(escape(t)); }catch{}
+    if(ext==='json'){
+      try{
+        const j=JSON.parse(t);
+        if(Array.isArray(j)){
+          const nowTitle=document.getElementById('title').value.trim();
+          j.slice(0,200).forEach(it=>saveNote({title:it.title||nowTitle||file.name.replace(/\.[^.]+$/,''),content:it.content||JSON.stringify(it),tags:it.tags||['imported']}));
+          return;
+        }
+        t=JSON.stringify(j,null,2);
+      }catch{}
+    }
+    saveNote({title:document.getElementById('title').value.trim()||file.name.replace(/\.[^.]+$/,''),tags:document.getElementById('tags').value||'imported',content:t});
+  };
+  reader.onerror=()=>alert('Không đọc được file, anh thử UTF-8 txt/md/json giúp em.');
+  reader.readAsText(file, 'utf-8');
+}
+const dz=document.getElementById('dropZone'); dz.ondragover=e=>{e.preventDefault();dz.classList.add('drag')}; dz.ondragleave=()=>dz.classList.remove('drag'); dz.ondrop=e=>{e.preventDefault();dz.classList.remove('drag'); [...(e.dataTransfer.files||[])].forEach(readFileToNote)};
+function toggleComposer(){composing=!composing; document.getElementById('composer').classList.toggle('hidden', !composing);} 
+function toggleSearch(){searching=!searching; const wrap=document.getElementById('leftSearchWrap'); wrap.classList.toggle('hidden', !searching); if(searching){document.getElementById('search').focus();}}
+function applySidebarWidth(){ document.getElementById('app').style.setProperty('--sidebar-w', sidebarWidth+'px'); }
+function toggleSidebar(forceOpen=null){ const app=document.getElementById('app'); const willHide = forceOpen===true ? false : forceOpen===false ? true : !app.classList.contains('sidebar-hidden'); app.classList.toggle('sidebar-hidden', willHide); document.getElementById('sidebarToggle').textContent=willHide?'☰ Mở menu':'☰ Ẩn menu'; if(!willHide) applySidebarWidth(); forceGraphRefresh(); }
+function initSidebarResize(){ const resizer=document.getElementById('sidebarResizer'); resizer.onmousedown=(e)=>{ e.preventDefault(); resizingSidebar=true; document.body.style.userSelect='none'; }; document.addEventListener('mousemove',(e)=>{ if(!resizingSidebar) return; sidebarWidth=Math.max(240, Math.min(620, e.clientX)); localStorage.setItem('second_brain_sidebar_w', String(sidebarWidth)); applySidebarWidth(); scheduleGraphRefresh(); }); document.addEventListener('mouseup',()=>{ if(!resizingSidebar) return; resizingSidebar=false; document.body.style.userSelect=''; scheduleGraphRefresh(); }); }
+function scheduleGraphRefresh(){ if(rerenderTimer) clearTimeout(rerenderTimer); rerenderTimer=setTimeout(()=>{ renderAll(); requestAnimationFrame(()=>renderAll()); }, 60); }
+function forceGraphRefresh(){ renderAll(); requestAnimationFrame(()=>renderAll()); setTimeout(()=>renderAll(),120); setTimeout(()=>renderAll(),260); setTimeout(()=>renderAll(),420); setTimeout(()=>renderAll(),700); }
+function initGraphResizeWatcher(){ const main=document.querySelector('.main'); if(!window.ResizeObserver||!main) return; resizeObserver=new ResizeObserver(()=>scheduleGraphRefresh()); resizeObserver.observe(main); }
+function initBrainDrag(){
+  const brain=document.getElementById('brainCore');
+  let dragging=false,sx=0,sy=0,ox=0,oy=0;
+  brain.style.pointerEvents='auto';
+  brain.style.cursor='grab';
+  brain.onmousedown=(e)=>{e.preventDefault(); dragging=true; sx=e.clientX; sy=e.clientY; ox=parseFloat(brain.style.left||'0'); oy=parseFloat(brain.style.top||'0');};
+  document.addEventListener('mousemove',(e)=>{ if(!dragging) return; const {w,h}=getGraphMetrics(); const nx=Math.max(60,Math.min(w-60,ox+(e.clientX-sx))), ny=Math.max(60,Math.min(h-60,oy+(e.clientY-sy))); brain.style.left=nx+'px'; brain.style.top=ny+'px'; setBrainPos({x:nx,y:ny}); const pos=getPos(); drawLinks(qNotes(), pos, document.getElementById('graphCanvas'), {x:nx,y:ny});});
+  document.addEventListener('mouseup',()=>{ if(dragging){ dragging=false; renderGraph(); }});
+}
+function renderAll(){renderTree();renderGraph()} window.onresize=()=>scheduleGraphRefresh(); seed(); applySidebarWidth(); initSidebarResize(); initGraphResizeWatcher(); initBrainDrag(); loadServerNotes().then(()=>{refreshSuggestions();forceGraphRefresh();}); refreshSuggestions(); forceGraphRefresh();
+</script>
+</body>
+</html>

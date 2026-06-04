@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Rescue Second Brain Notes v5</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#0b1220;color:#eef4ff;padding:20px;line-height:1.5}
+    button{padding:12px 16px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#fff;cursor:pointer;margin:6px 8px 6px 0;font-size:16px}
+    textarea{width:100%;min-height:260px;margin-top:14px;background:#020617;color:#93c5fd;border:1px solid #334155;border-radius:12px;padding:12px;box-sizing:border-box}
+    .card{border:1px solid #334155;border-radius:14px;padding:14px;margin:12px 0;background:#0f172a}
+    code{background:#111827;padding:2px 6px;border-radius:6px}
+    .ok{color:#86efac}.warn{color:#fcd34d}.err{color:#fca5a5}.muted{color:#94a3b8}
+    .sample{margin-top:8px;padding:8px 10px;border-radius:10px;background:#111827}
+  </style>
+</head>
+<body>
+  <h1>Rescue Second Brain Notes v5</h1>
+  <p>Chỉ nhận <b>notes thật</b> có <code>title/category/content</code>. Tự chặn chat history kiểu <code>role/content</code>.</p>
+  <button onclick="scanNow()">Quét dữ liệu local</button>
+  <div id="meta"></div>
+  <div id="list"></div>
+  <textarea id="out" placeholder="JSON notes sạch sẽ hiện ở đây..."></textarea>
+  <script>
+    window.__scanFound = [];
+    function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function isRealNote(x){
+      return !!(x && typeof x === 'object' && !Array.isArray(x) && (
+        'title' in x || 'category' in x || 'content' in x || 'tags' in x || 'topic' in x
+      ) && !('role' in x && 'content' in x && !('title' in x) && !('category' in x)));
+    }
+    function normalize(arr){
+      var out=[];
+      for(var i=0;i<arr.length;i++){
+        var x=arr[i];
+        if(!isRealNote(x)) continue;
+        out.push({
+          id: x.id || ('rescued-'+Date.now()+'-'+i),
+          category: x.category || x.topic || 'General',
+          title: x.title || (String(x.content||'').slice(0,60) || 'Untitled'),
+          content: x.content || '',
+          tags: Array.isArray(x.tags) ? x.tags : [],
+          created_at: x.created_at || new Date().toISOString(),
+          updated_at: x.updated_at || new Date().toISOString(),
+          linked_notes: Array.isArray(x.linked_notes) ? x.linked_notes : [],
+          source: x.source || 'rescue-local'
+        });
+      }
+      return out;
+    }
+    function scanNow(){
+      var found=[];
+      var meta=document.getElementById('meta');
+      var list=document.getElementById('list');
+      try{
+        for(var i=0;i<localStorage.length;i++){
+          var key=localStorage.key(i);
+          var raw=localStorage.getItem(key);
+          if(!raw) continue;
+          try{
+            var data=JSON.parse(raw);
+            if(!Array.isArray(data) || !data.length) continue;
+            var clean=normalize(data);
+            if(!clean.length) continue;
+            var sample=clean[0] || {};
+            found.push({key:key,data:clean,count:clean.length,sampleTitle:sample.title||'',sampleCat:sample.category||'',rawCount:data.length});
+          }catch(e){}
+        }
+      }catch(err){ meta.innerHTML='<p class="err">Lỗi quét localStorage: '+esc(err.message||err)+'</p>'; return; }
+      found.sort(function(a,b){ return b.count-a.count; });
+      window.__scanFound=found;
+      if(!found.length){ meta.innerHTML='<p class="warn">Không tìm thấy kho notes hợp lệ nào.</p>'; list.innerHTML=''; return; }
+      meta.innerHTML='<p class="ok">Đã lọc xong. Chỉ còn các key chứa notes thật. Chọn key có số lượng lớn nhất và preview đúng kiến thức của anh.</p>';
+      var html='';
+      for(var j=0;j<found.length;j++){
+        var f=found[j];
+        html += '<div class="card">'
+          + '<div><b>Key:</b> <code>'+esc(f.key)+'</code></div>'
+          + '<div><b>Số notes hợp lệ:</b> '+f.count+' <span class="muted">(raw '+f.rawCount+')</span></div>'
+          + '<div class="sample"><b>Preview:</b> ['+esc(f.sampleCat)+'] '+esc(f.sampleTitle)+'</div>'
+          + '<div style="margin-top:8px"><button onclick="viewKey('+j+')">Xem JSON sạch</button><button onclick="pushKey('+j+')">Đẩy bộ này lên server</button></div>'
+          + '</div>';
+      }
+      list.innerHTML=html;
+    }
+    function viewKey(idx){
+      var item=window.__scanFound[idx];
+      if(!item) return;
+      document.getElementById('out').value=JSON.stringify(item.data,null,2);
+      document.getElementById('meta').innerHTML='<p class="ok">Đang xem <code>'+esc(item.key)+'</code> với '+item.count+' notes sạch.</p>';
+    }
+    function pushKey(idx){
+      var item=window.__scanFound[idx];
+      if(!item){ document.getElementById('meta').innerHTML='<p class="warn">Không tìm thấy bộ notes để đẩy.</p>'; return; }
+      document.getElementById('out').value=JSON.stringify(item.data,null,2);
+      document.getElementById('meta').innerHTML='<p class="warn">Đang đẩy <code>'+esc(item.key)+'</code> lên server...</p>';
+      try{
+        var xhr=new XMLHttpRequest();
+        xhr.open('POST','/.netlify/functions/set-notes',true);
+        xhr.setRequestHeader('Content-Type','application/json');
+        xhr.onreadystatechange=function(){
+          if(xhr.readyState===4){
+            if(xhr.status>=200 && xhr.status<300){
+              document.getElementById('meta').innerHTML='<p class="ok">Đã đẩy thành công <code>'+esc(item.key)+'</code> lên server. Phản hồi: '+esc(xhr.responseText)+'</p>';
+            }else{
+              document.getElementById('meta').innerHTML='<p class="err">Đẩy server lỗi. HTTP '+xhr.status+' - '+esc(xhr.responseText)+'</p>';
+            }
+          }
+        };
+        xhr.send(JSON.stringify({notes:item.data}));
+      }catch(err){
+        document.getElementById('meta').innerHTML='<p class="err">Lỗi khi gửi server: '+esc(err.message||err)+'</p>';
+      }
+    }
+  </script>
+</body>
+</html>

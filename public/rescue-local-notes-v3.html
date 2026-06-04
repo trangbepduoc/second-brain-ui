@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Rescue Second Brain Notes v3</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#0b1220;color:#eef4ff;padding:20px;line-height:1.5}
+    button{padding:12px 16px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#fff;cursor:pointer;margin:6px 8px 6px 0;font-size:16px}
+    textarea{width:100%;min-height:260px;margin-top:14px;background:#020617;color:#93c5fd;border:1px solid #334155;border-radius:12px;padding:12px;box-sizing:border-box}
+    .card{border:1px solid #334155;border-radius:14px;padding:14px;margin:12px 0;background:#0f172a}
+    code{background:#111827;padding:2px 6px;border-radius:6px}
+    .ok{color:#86efac}.warn{color:#fcd34d}.err{color:#fca5a5}
+  </style>
+</head>
+<body>
+  <h1>Rescue Second Brain Notes v3</h1>
+  <p>Bản tối giản để cứu dữ liệu từ browser cũ. Nếu máy này còn bộ não cũ, trang sẽ liệt kê các kho notes và cho đẩy thẳng lên server.</p>
+  <button onclick="scanNow()">Quét dữ liệu local</button>
+  <button onclick="pushSelected()">Đẩy bộ đang chọn lên server</button>
+  <div id="meta"></div>
+  <div id="list"></div>
+  <textarea id="out" placeholder="JSON của bộ notes sẽ hiện ở đây..."></textarea>
+  <script>
+    var selectedNotes = [];
+    var selectedKey = '';
+
+    function esc(s){
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function looksLikeNotes(arr){
+      if(!Array.isArray(arr) || !arr.length) return false;
+      for(var i=0;i<arr.length;i++){
+        var x = arr[i];
+        if(x && typeof x === 'object' && !Array.isArray(x)){
+          if('title' in x || 'content' in x || 'tags' in x || 'category' in x || 'topic' in x) return true;
+        }
+      }
+      return false;
+    }
+
+    function scanNow(){
+      var found = [];
+      try{
+        for(var i=0;i<localStorage.length;i++){
+          var key = localStorage.key(i);
+          var raw = localStorage.getItem(key);
+          if(!raw) continue;
+          try{
+            var data = JSON.parse(raw);
+            if(looksLikeNotes(data)){
+              found.push({
+                key: key,
+                data: data,
+                count: data.length,
+                sample: ((data[0] && (data[0].title || data[0].content)) || '').toString().slice(0,100)
+              });
+            }
+          }catch(e){}
+        }
+      }catch(err){
+        document.getElementById('meta').innerHTML = '<p class="err">Lỗi quét localStorage: '+esc(err.message || err)+'</p>';
+        return;
+      }
+
+      found.sort(function(a,b){ return b.count - a.count; });
+      var list = document.getElementById('list');
+      var meta = document.getElementById('meta');
+
+      if(!found.length){
+        meta.innerHTML = '<p class="warn">Không tìm thấy kho notes hợp lệ nào trong browser này.</p>';
+        list.innerHTML = '';
+        document.getElementById('out').value = '';
+        selectedNotes = [];
+        selectedKey = '';
+        return;
+      }
+
+      meta.innerHTML = '<p class="ok">Đã quét xong. Tìm thấy '+found.length+' kho dữ liệu note.</p>';
+      var html = '';
+      for(var j=0;j<found.length;j++){
+        var f = found[j];
+        html += '<div class="card">'
+          + '<div><b>Key:</b> <code>'+esc(f.key)+'</code></div>'
+          + '<div><b>Số notes:</b> '+f.count+'</div>'
+          + '<div><b>Mẫu:</b> '+esc(f.sample || '(trống)')+'</div>'
+          + '<div style="margin-top:8px">'
+          + '<button onclick="selectKey('+j+')">Chọn bộ này</button>'
+          + '<button onclick="pushKey('+j+')">Đẩy bộ này lên server</button>'
+          + '</div></div>';
+      }
+      list.innerHTML = html;
+      window.__scanFound = found;
+      if(found[0]) selectKey(0);
+    }
+
+    function selectKey(idx){
+      var item = (window.__scanFound || [])[idx];
+      if(!item) return;
+      selectedNotes = item.data;
+      selectedKey = item.key;
+      document.getElementById('out').value = JSON.stringify(item.data, null, 2);
+      document.getElementById('meta').innerHTML = '<p class="ok">Đã chọn <code>'+esc(item.key)+'</code> với '+item.count+' notes.</p>';
+    }
+
+    async function pushSelected(){
+      if(!selectedNotes || !selectedNotes.length){
+        document.getElementById('meta').innerHTML = '<p class="warn">Chưa chọn bộ notes nào. Bấm Quét dữ liệu local trước.</p>';
+        return;
+      }
+      try{
+        var r = await fetch('/.netlify/functions/set-notes', {
+          method: 'POST',
+          headers: {'content-type':'application/json'},
+          body: JSON.stringify({notes:selectedNotes})
+        });
+        var t = await r.text();
+        document.getElementById('meta').innerHTML = '<p class="ok">Đã đẩy <code>'+esc(selectedKey)+'</code> lên server. Phản hồi: '+esc(t)+'</p>';
+      }catch(err){
+        document.getElementById('meta').innerHTML = '<p class="err">Lỗi đẩy server: '+esc(err.message || err)+'</p>';
+      }
+    }
+
+    function pushKey(idx){
+      selectKey(idx);
+      pushSelected();
+    }
+  </script>
+</body>
+</html>

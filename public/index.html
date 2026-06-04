@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Second Brain Category Pro</title>
+  <style>
+    :root{--bg:#081325;--line:#24324d;--text:#eef4ff;--muted:#92a3c5;--accent:#7c3aed;--accent2:#22d3ee;--surface:rgba(9,14,28,.94);--card:rgba(255,255,255,.03);--input:#111b35;--nodeBg:rgba(17,27,53,.88);--nodeBorder:rgba(124,58,237,.35);--itemBg:rgba(255,255,255,.02)} body.light{--bg:#ffffff;--line:#d9dfe8;--text:#1f2937;--muted:#6b7280;--accent:#4f46e5;--accent2:#4f46e5;--surface:#ffffff;--card:#ffffff;--input:#ffffff;--nodeBg:#ffffff;--nodeBorder:#cbd5e1;--itemBg:#ffffff}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:radial-gradient(circle at top,#162847,var(--bg) 58%);color:var(--text);overflow:hidden} body.light{background:#fff}
+    .app{display:grid;grid-template-columns:340px 1fr;height:100vh}.app.sidebar-hidden{grid-template-columns:0 1fr}.app.sidebar-hidden .left{display:none}.left{padding:14px;background:var(--surface);border-right:1px solid var(--line);overflow:auto}.main{position:relative}
+    .brand{display:flex;gap:10px;align-items:center;margin-bottom:10px}.dot{width:12px;height:12px;border-radius:999px;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 0 18px rgba(124,58,237,.8)}
+    .card,.group,.topic{background:var(--card);border:1px solid var(--line);border-radius:14px}.card{padding:12px}.group,.topic{margin-top:8px}
+    .head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;cursor:pointer}.children{padding:0 8px 8px}.item{padding:8px;border:1px solid var(--line);border-radius:10px;margin-top:6px;cursor:pointer;background:var(--itemBg)}
+    input,select,textarea,button{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--text)} textarea{min-height:88px;resize:vertical} button{cursor:pointer;background:linear-gradient(135deg,var(--accent),#4f46e5);font-weight:700}
+    .row{display:flex;gap:8px}.row>*{flex:1}.sp8{height:8px}.hint{font-size:12px;color:var(--muted)}.mini-actions{position:relative;display:flex;gap:6px;align-items:center}.kebab{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--text);font-weight:800;cursor:pointer}.menu-pop{display:none;position:absolute;top:30px;right:0;min-width:112px;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface);z-index:12}.mini-actions.open .menu-pop{display:block}.mini-btn{width:100%;padding:6px 9px;font-size:12px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:#fff;line-height:1.2;margin-bottom:6px}.mini-btn:last-child{margin-bottom:0}.mini-btn:hover{background:rgba(255,255,255,.14)}.danger{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.14);color:#fff}.danger:hover{background:rgba(239,68,68,.2)} body.light .kebab{background:#fff} body.light .menu-pop{background:#fff} body.light .mini-btn{border:1px solid rgba(15,23,42,.08);background:linear-gradient(180deg,#7c8aa0,#66758d);color:#fff} body.light .mini-btn:hover{background:linear-gradient(180deg,#8796ad,#6e7d96)} body.light .danger{border-color:rgba(185,28,28,.12);background:linear-gradient(180deg,#ef4444,#dc2626);color:#fff} body.light .danger:hover{background:linear-gradient(180deg,#f05252,#b91c1c)}
+    .graph{position:absolute;inset:0} body.light .graph{background:#fff}.menuBtn{position:absolute;left:14px;top:14px;z-index:6;padding:8px 12px;width:auto;background:rgba(21,32,58,.92)}.topTools{display:flex;gap:8px;margin-bottom:10px}.toolBtn{width:auto;padding:8px 10px;background:#15203a}.hidden{display:none !important} body.light .menuBtn, body.light .toolBtn{background:#fff;color:#111827;border:1px solid #d1d5db}
+    #canvas{position:absolute;inset:0;pointer-events:none;z-index:1}#nodes{position:absolute;inset:0;z-index:3}.brain{position:absolute;transform:translate(-50%,-50%);width:78px;height:78px;border-radius:999px;border:2px solid rgba(34,211,238,.6);background:rgba(124,58,237,.18);display:flex;align-items:center;justify-content:center;z-index:6;cursor:grab;pointer-events:auto;box-shadow:0 0 30px rgba(34,211,238,.18)} body.light .brain{border:2px solid #d1d5db;background:#d1d5db;box-shadow:none;color:#374151}
+    .node{position:absolute;transform:translate(-50%,-50%);padding:8px 12px;border-radius:999px;background:var(--nodeBg);border:1px solid var(--nodeBorder);white-space:nowrap;cursor:grab;display:flex;align-items:center;gap:8px}.node-dot{width:10px;height:10px;border-radius:999px;display:inline-block;box-shadow:0 0 10px rgba(0,0,0,.12);background:#38bdf8} body.light .node-dot{background:#9ca3af !important}
+    .detail{position:absolute;top:84px;right:14px;width:min(380px,38vw);max-height:72vh;overflow:auto;background:rgba(9,14,28,.96);border:1px solid var(--line);border-radius:14px;padding:12px;display:none;z-index:7} body.light .detail{background:#f3f4f6;color:#111827;border:1px solid #d1d5db}
+    .tag{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(124,58,237,.18);margin:0 6px 6px 0;font-size:12px}.brain-query-panel{position:fixed;top:0;right:0;height:100vh;width:min(560px,48vw);background:var(--surface);border-left:1px solid var(--line);z-index:40;transform:translateX(102%);transition:transform .28s ease;display:flex;flex-direction:column;padding:14px}.brain-query-panel.open{transform:translateX(0)}.chat-row{display:flex;margin:10px 0}.chat-row.user{justify-content:flex-end}.chat-row.assistant{justify-content:flex-start}.chat-bubble{max-width:82%;padding:10px 12px 28px 12px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.04);position:relative}.copy-reply{position:absolute;right:10px;bottom:8px;width:auto;padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid var(--line);background:rgba(255,255,255,.08);color:var(--text);cursor:pointer}.chat-row.user .chat-bubble{background:linear-gradient(180deg,#1d4ed8,#1e40af);border-color:rgba(255,255,255,.14)}.chat-row.assistant .chat-bubble{background:rgba(255,255,255,.06);border-color:rgba(99,102,241,.22)}.role-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.04em;margin-bottom:7px;color:#fff}.role-badge.user{background:linear-gradient(180deg,#b91c1c,#7f1d1d)}.role-badge.assistant{background:linear-gradient(180deg,#8b5cf6,#4f46e5)}.chat-text{white-space:normal;color:#fff;line-height:1.55}.chat-text h2,.chat-text h3,.chat-text h4{margin:8px 0 6px}.chat-text code{padding:2px 6px;border-radius:6px;background:rgba(255,255,255,.12);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.chat-text strong{font-weight:800}.typing{display:inline-flex;gap:5px;align-items:center;padding:4px 0}.typing span{width:8px;height:8px;border-radius:999px;background:rgba(255,255,255,.9);display:inline-block;animation:bounce 1s infinite ease-in-out}.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.45}40%{transform:translateY(-4px);opacity:1}} body.light .brain-query-panel{background:#fff} body.light .chat-row.user .chat-bubble{background:linear-gradient(180deg,#1d4ed8,#1e40af)} body.light .chat-row.assistant .chat-bubble{background:#f3f4f6;border-color:#dbe1ea} body.light .chat-text{color:#111827} body.light .chat-row.user .chat-text{color:#fff} body.light .typing span{background:#6b7280}.auth{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(3,8,20,.72);backdrop-filter:blur(8px)}.auth-card{width:min(420px,92vw);background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 24px 80px rgba(0,0,0,.28)}.auth-title{font-size:24px;font-weight:800;margin:0 0 8px}.auth-sub{color:var(--muted);font-size:14px;margin:0 0 18px}.auth-actions{display:flex;gap:10px;margin-top:10px}.ghostBtn{background:transparent}.auth-msg{margin-top:10px;font-size:13px;color:var(--muted)} body.light .auth{background:rgba(244,246,251,.84)} body.light .auth-card{box-shadow:0 20px 60px rgba(15,23,42,.12)}
+  </style>
+</head>
+<body>
+<div id="authGate" class="auth">
+  <div class="auth-card">
+    <div class="auth-title">Second Brain Login</div>
+    <div id="authSub" class="auth-sub">Đặt mật khẩu mới hoặc đăng nhập để vào không gian ghi chú.</div>
+    <input id="authPassword" type="password" placeholder="Nhập mật khẩu" autocomplete="off" spellcheck="false" data-lpignore="true" />
+    <div class="sp8"></div>
+    <input id="authPassword2" type="password" placeholder="Nhập lại mật khẩu (khi tạo mới)" autocomplete="off" spellcheck="false" data-lpignore="true" />
+    <div class="auth-actions">
+      <button id="authPrimary" onclick="handleAuthPrimary()">Tiếp tục</button>
+      <button id="authReset" class="ghostBtn" onclick="resetPasswordUi()">Đặt lại</button>
+    </div>
+    <div id="authMsg" class="auth-msg"></div>
+  </div>
+</div>
+<div class="app">
+  <aside class="left" id="sidebar">
+    <div class="brand"><div class="dot"></div><div><div style="font-size:22px;font-weight:800">Second Brain</div><div class="hint">Category Pro Preview</div></div></div>
+    <div class="topTools"><button class="toolBtn" onclick="toggleComposer()">📝 Thêm</button><button class="toolBtn" onclick="toggleSearch()">🔍 Tìm</button><button class="toolBtn" onclick="openBrainQuery()">💬 Brain Query</button></div>
+    <div id="searchWrap" class="hidden"><input id="search" placeholder="Tìm category / chủ đề..." oninput="renderAll()" /><div class="sp8"></div></div>
+    <div class="card" id="composer">
+      <select id="categorySelect"><option value="">Chọn category có sẵn...</option></select>
+      <div class="sp8"></div>
+      <input id="category" placeholder="Hoặc nhập category mới" />
+      <div class="sp8"></div>
+      <input id="title" placeholder="Chủ đề" list="titleList" />
+      <datalist id="titleList"></datalist>
+      <div class="sp8"></div>
+      <input id="tags" placeholder="tags: a,b,c" list="tagList" />
+      <datalist id="tagList"></datalist>
+      <div class="sp8"></div>
+      <textarea id="content" placeholder="Nội dung"></textarea>
+      <div class="sp8"></div>
+      <button id="saveBtn">Lưu</button><div id="editHint" class="hint hidden" style="margin-top:8px">Đang sửa note chi tiết...</div>
+    </div>
+    <div id="tree"></div>
+  </aside>
+  <main class="main">
+    <div id="themeBox" style="position:absolute;right:12px;top:12px;z-index:8;display:flex;gap:6px;align-items:center;background:var(--surface);border:1px solid var(--line);padding:6px 8px;border-radius:999px">
+      <span style="font-size:12px;color:var(--muted)">Theme</span>
+      <select id="themeSelect" style="width:88px;padding:4px 8px;border-radius:999px" onchange="setTheme(this.value)">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+      </select>
+    </div>
+<div id="brainQueryPanel" class="brain-query-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <b>Brain Query</b><button class="toolBtn" style="width:auto;padding:6px 10px" onclick="closeBrainQuery()">Đóng</button>
+  </div>
+  <div id="brainQueryLog" style="flex:1;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--card)"></div>
+  <div class="sp8"></div>
+  <textarea id="brainQueryInput" placeholder="Hỏi gì cũng được về kho note này..." style="min-height:88px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendBrainQuery();}"></textarea>
+  <div class="sp8"></div>
+  <div style="display:flex;gap:8px"><button onclick="sendBrainQuery()">Gửi</button><button class="ghostBtn" onclick="clearBrainQueryMemory()">Xóa memory chat</button></div>
+</div>
+    <button class="menuBtn" onclick="toggleSidebar()">☰ Menu</button>
+    <div class="graph">
+      <canvas id="canvas"></canvas>
+      <div id="brain" class="brain">BRAIN</div>
+      <div id="nodes"></div>
+      <div id="detail" class="detail"></div>
+    </div>
+  </main>
+</div>
+<script>
+const KEY='sb_category_pro_notes', POS='sb_category_pro_pos', BRAIN='sb_category_pro_brain', THEME='sb_category_pro_theme', PASS='sb_category_pro_pass_v1', PASS_RAW='sb_category_pro_pass_raw_v1', AUTH='sb_category_pro_auth_ok', AUTH_PERSIST='sb_category_pro_auth_persist';
+const LEGACY_PASS_KEYS=['sb_category_pro_pass','sb_pass_v1','second_brain_pass','second_brain_password'];
+const LEGACY_PASS_RAW_KEYS=['sb_category_pro_pass_raw','sb_pass_raw_v1','second_brain_pass_raw','second_brain_password_raw'];
+let collapsed={};
+let editingNoteId=null;
+function sanitizeNotes(arr){ return (Array.isArray(arr)?arr:[]).filter(n=>{ const cat=(n&&n.category)||'General'; const id=n&&n.id; const title=(n&&n.title)||''; if(cat==='General') return false; if(id==='n1'||id==='n2') return false; if(title==='Openclaw'||title==='Landing') return false; return true; }); }
+function getNotes(){return sanitizeNotes(JSON.parse(localStorage.getItem(KEY)||'[]'))}
+function setNotes(v){localStorage.setItem(KEY,JSON.stringify(sanitizeNotes(v)))}
+async function loadServerNotes(){ try{ const r=await fetch('/.netlify/functions/list-notes',{credentials:'include'}); if(r.status===401){ lockUi(); throw new Error('auth_required'); } const t=await r.text(); const d=JSON.parse(t||'[]'); return sanitizeNotes(Array.isArray(d)?d:[]); }catch(_){ return []; } }
+let saveInFlight=false; let pendingServerNotes=null;
+async function saveServerNotes(notes){ pendingServerNotes=sanitizeNotes(notes); if(saveInFlight) return true; saveInFlight=true; try{ while(pendingServerNotes){ const batch=pendingServerNotes; pendingServerNotes=null; let ok=false; for(let i=0;i<2;i++){ try{ const r=await fetch('/.netlify/functions/set-notes',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({confirm:'ALLOW_SET_NOTES',notes:batch})}); if(r.ok){ ok=true; break; } }catch(_){} } if(!ok){ pendingServerNotes=batch; await new Promise(res=>setTimeout(res,500)); } } return true; } finally { saveInFlight=false; } }
+function getPos(){return JSON.parse(localStorage.getItem(POS)||'{}')}
+function setPos(v){localStorage.setItem(POS,JSON.stringify(v))}
+function getBrain(){return JSON.parse(localStorage.getItem(BRAIN)||'null')}
+function setBrain(v){localStorage.setItem(BRAIN,JSON.stringify(v))}
+if(!localStorage.getItem(KEY)){setNotes([])}else{ setNotes(getNotes()) }
+
+
+function el(id){ return document.getElementById(id); }
+
+
+function migrateLegacyPassword(){
+  if(!localStorage.getItem(PASS)){
+    for(const k of LEGACY_PASS_KEYS){
+      const v=localStorage.getItem(k);
+      if(v){ localStorage.setItem(PASS,v); break; }
+    }
+  }
+  if(!localStorage.getItem(PASS_RAW)){
+    for(const k of LEGACY_PASS_RAW_KEYS){
+      const v=localStorage.getItem(k);
+      if(v){ localStorage.setItem(PASS_RAW,v); break; }
+    }
+  }
+  // recover hash if only raw remains from old versions
+  const raw=localStorage.getItem(PASS_RAW);
+  if(!localStorage.getItem(PASS) && raw){
+    localStorage.setItem(PASS, hashPassword(raw));
+  }
+}
+
+function hashPassword(str){ let h=2166136261; for(const ch of str){ h^=ch.charCodeAt(0); h=Math.imul(h,16777619);} return 'h'+(h>>>0).toString(16); }
+function hasPassword(){ return !!localStorage.getItem(PASS); }
+function lockUi(){ el('authGate').style.display='flex'; document.body.style.overflow='hidden'; }
+function unlockUi(){ el('authGate').style.display='none'; document.body.style.overflow='hidden'; }
+function syncAuthUi(){ const creating=!hasPassword(); el('authSub').textContent=creating?'Tạo mật khẩu mới để khóa second brain của anh.':'Nhập mật khẩu để vào second brain.'; el('authPassword2').style.display=creating?'block':'none'; el('authPrimary').textContent=creating?'Tạo mật khẩu':'Đăng nhập'; el('authReset').style.display=creating?'none':'inline-block'; el('authMsg').textContent=''; }
+function initAuth(){ migrateLegacyPassword(); syncAuthUi(); if(sessionStorage.getItem(AUTH)==='1' || localStorage.getItem(AUTH_PERSIST)==='1'){ unlockUi(); return; } lockUi(); setTimeout(()=>el('authPassword').focus(),60); }
+async function handleAuthPrimary(){ const p1=(el('authPassword').value||'').trim(); const p2=(el('authPassword2').value||'').trim(); if(!hasPassword()){ if(!p1 || p1.length<4){ el('authMsg').textContent='Mật khẩu cần ít nhất 4 ký tự.'; return; } if(p1!==p2){ el('authMsg').textContent='Mật khẩu nhập lại chưa khớp.'; return; } localStorage.setItem(PASS, hashPassword(p1)); localStorage.setItem(PASS_RAW,p1); await serverLogin(p1); sessionStorage.setItem(AUTH,'1'); localStorage.setItem(AUTH_PERSIST,'1'); el('authPassword').value=''; el('authPassword2').value=''; syncAuthUi(); unlockUi(); return; } const serverOk=await serverLogin(p1); if(serverOk){ localStorage.setItem(PASS, hashPassword(p1)); localStorage.setItem(PASS_RAW,p1); } else if(hashPassword(p1)!==localStorage.getItem(PASS)){ sessionStorage.removeItem(AUTH); localStorage.removeItem(AUTH_PERSIST); el('authMsg').textContent='Sai mật khẩu rồi anh.'; return; } sessionStorage.setItem(AUTH,'1'); localStorage.setItem(AUTH_PERSIST,'1'); el('authPassword').value=''; unlockUi(); }
+async function serverLogin(pass){ try{ const r=await fetch('/.netlify/functions/auth-login',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({password:String(pass||'').trim()})}); return r.ok; }catch(_){ return false; } }
+function resetPasswordUi(){ const current=prompt('Nhập mật khẩu hiện tại để đặt lại'); if(!current) return; if(hashPassword(current)!==localStorage.getItem(PASS)){ el('authMsg').textContent='Sai mật khẩu hiện tại.'; return; } localStorage.removeItem(PASS); localStorage.removeItem(PASS_RAW); sessionStorage.removeItem(AUTH); localStorage.removeItem(AUTH_PERSIST); el('authPassword').value=''; el('authPassword2').value=''; lockUi(); syncAuthUi(); }
+
+function setTheme(t){ const theme=(t==='light'?'light':'dark'); document.body.classList.toggle('light', theme==='light'); localStorage.setItem(THEME,theme); const el=document.getElementById('themeSelect'); if(el) el.value=theme; draw(); }
+function initTheme(){ setTheme(localStorage.getItem(THEME)||'dark'); }
+let searchOpen=false, composerOpen=true;
+function filteredNotes(){const q=(document.getElementById('search')?.value||'').trim().toLowerCase(); if(!q) return getNotes(); return getNotes().filter(n=>[((n.category||'')),((n.title||'')),((n.content||'')),((n.tags||[]).join(' '))].join(' ').toLowerCase().includes(q));}
+function grouped(){const g={}; for(const n of filteredNotes()){const c=(n.category||'General').trim()||'General'; const t=(n.title||'Untitled').trim()||'Untitled'; ((g[c]??={})[t]??=[]).push(n)} return g}
+function paletteForCategory(name){ const palette=['#38bdf8','#22d3ee','#60a5fa','#06b6d4','#0ea5e9','#67e8f9']; let h=0; for(const ch of (name||'General')) h=(h*31 + ch.charCodeAt(0))>>>0; return palette[h % palette.length]; }
+function topicNodes(){const map={}; for(const n of filteredNotes()){const k=(n.title||'Untitled').trim()||'Untitled'; const c=(n.category||'General').trim()||'General'; if(!map[k]) map[k]={id:'topic:'+k,title:k,content:n.content||'',tags:[...(n.tags||[])],categories:[c],color:paletteForCategory(c)}; else {map[k].content += '\n- ' + (n.content||''); map[k].tags=[...new Set([...(map[k].tags||[]), ...(n.tags||[])])]; map[k].categories=[...new Set([...(map[k].categories||[]), c])]; if(!map[k].color) map[k].color=paletteForCategory(c);} } return Object.values(map)}
+function refreshForm(){const notes=getNotes(); const cats=[...new Set(notes.map(n=>(n.category||'General').trim()).filter(Boolean))].sort(); const titles=[...new Set(notes.map(n=>n.title).filter(Boolean))].sort(); const tags=[...new Set(notes.flatMap(n=>n.tags||[]).filter(Boolean))].sort(); categorySelect.innerHTML='<option value="">Chọn category có sẵn...</option>'+cats.map(c=>`<option value="${c}">${c}</option>`).join(''); titleList.innerHTML=titles.map(t=>`<option value="${t}">`).join(''); tagList.innerHTML=tags.map(t=>`<option value="${t}">`).join('')}
+function renderTree(){tree.innerHTML=''; const g=grouped(); Object.keys(g).sort().forEach(category=>{ const ck='c:'+category; const cat=document.createElement('div'); cat.className='group'; const catClosed=!!collapsed[ck]; cat.innerHTML=`<div class='head'><b>${category}</b><div class='mini-actions'><button class='kebab' onclick="event.stopPropagation();toggleMiniMenu(this)">⋯</button><div class='menu-pop'><button class='mini-btn' onclick="event.stopPropagation();editCategory('${category.replace(/'/g,"&#39;")}')">Sửa</button><button class='mini-btn danger' onclick="event.stopPropagation();deleteCategory('${category.replace(/'/g,"&#39;")}')">Xóa</button></div><span>${catClosed?'▶':'▼'}</span></div></div><div class='children' style='display:${catClosed?'none':'block'}'></div>`; cat.querySelector('.head').onclick=(e)=>{ if(e.target.tagName==='BUTTON') return; collapsed[ck]=!collapsed[ck];renderTree()}; const catChildren=cat.querySelector('.children'); Object.keys(g[category]).sort().forEach(title=>{ const tk='t:'+category+'::'+title; const topicClosed=!!collapsed[tk]; const topic=document.createElement('div'); topic.className='topic'; topic.innerHTML=`<div class='head'><span>${title}</span><div class='mini-actions'><button class='kebab' onclick="event.stopPropagation();toggleMiniMenu(this)">⋯</button><div class='menu-pop'><button class='mini-btn' onclick="event.stopPropagation();editTopic('${category.replace(/'/g,"&#39;")}','${title.replace(/'/g,"&#39;")}')">Sửa</button><button class='mini-btn danger' onclick="event.stopPropagation();deleteTopic('${category.replace(/'/g,"&#39;")}','${title.replace(/'/g,"&#39;")}')">Xóa</button></div><span>${topicClosed?'▶':'▼'}</span></div></div><div class='children' style='display:${topicClosed?'none':'block'}'></div>`; topic.querySelector('.head').onclick=(e)=>{if(e.target.tagName==='BUTTON') return; e.stopPropagation(); collapsed[tk]=!collapsed[tk]; renderTree()}; const topicChildren=topic.querySelector('.children'); g[category][title].forEach(n=>{ const item=document.createElement('div'); item.className='item'; item.innerHTML=`<div style='display:flex;justify-content:space-between;gap:8px;align-items:flex-start'><div style='flex:1'>${(n.content.slice(0,60)||'(trống)').replace(/</g,'&lt;')}</div><div class='mini-actions'><button class='kebab' onclick="event.stopPropagation();toggleMiniMenu(this)">⋯</button><div class='menu-pop'><button class='mini-btn' onclick="event.stopPropagation();editNoteById('${n.id}')">Sửa</button><button class='mini-btn danger' onclick="event.stopPropagation();deleteNoteById('${n.id}' )">Xóa</button></div></div></div>`; item.onclick=(e)=>{ if(e.target.tagName==='BUTTON') return; showDetail({title:n.title,content:n.content,tags:n.tags}); }; topicChildren.appendChild(item)}); catChildren.appendChild(topic)}); tree.appendChild(cat)})}
+async function toggleMiniMenu(btn){ document.querySelectorAll('.mini-actions.open').forEach(el=>{ if(el!==btn.parentElement) el.classList.remove('open'); }); btn.parentElement.classList.toggle('open'); }
+document.addEventListener('click',()=>{ document.querySelectorAll('.mini-actions.open').forEach(el=>el.classList.remove('open')); });
+async function saveNotesAndRefresh(arr){ setNotes(arr); refreshForm(); renderAll(); saveServerNotes(arr); return true; }
+function editNoteById(id){ const arr=getNotes(); const n=arr.find(x=>x.id===id); if(!n) return; document.querySelector('.app').classList.remove('sidebar-hidden'); composer.classList.remove('hidden'); editingNoteId=id; category.value=n.category||'General'; title.value=n.title||''; content.value=n.content||''; tags.value=(n.tags||[]).join(', '); saveBtn.textContent='Cập nhật note'; editHint.classList.remove('hidden'); content.focus(); content.setSelectionRange(content.value.length, content.value.length); }
+function deleteNoteById(id){ const arr=getNotes(); const n=arr.find(x=>x.id===id); if(!n) return; if(!confirm(`Xóa note "${n.title}"?`)) return; saveNotesAndRefresh(arr.filter(x=>x.id!==id)); }
+function editCategory(oldCategory){ const arr=getNotes(); const next=prompt('Tên category mới', oldCategory); if(next===null) return; const name=(next||'General').trim()||'General'; arr.forEach(n=>{ if((n.category||'General')===oldCategory) n.category=name; }); saveNotesAndRefresh(arr); }
+async function deleteCategory(category){ if(!confirm(`Xóa toàn bộ category \"${category}\"?`)) return; const arr=getNotes().filter(n=>(n.category||'General')!==category); setNotes(arr); const ok=await saveServerNotes(arr); if(!ok){ alert('Xóa category chưa ghi được lên server.'); return; } await pullServerNotes(); refreshForm(); renderAll(); }
+function editTopic(category,title){ const arr=getNotes(); const next=prompt('Tên chủ đề mới', title); if(next===null) return; const name=(next||'Untitled').trim()||'Untitled'; arr.forEach(n=>{ if((n.category||'General')===category && (n.title||'Untitled')===title) n.title=name; }); saveNotesAndRefresh(arr); }
+function deleteTopic(category,title){ if(!confirm(`Xóa toàn bộ chủ đề "${title}" trong category "${category}"?`)) return; const arr=getNotes().filter(n=>!((n.category||'General')===category && (n.title||'Untitled')===title)); saveNotesAndRefresh(arr); }
+function metrics(){const wrap=document.querySelector('.graph'); const area=document.getElementById('nodes'); const main=document.querySelector('.main'); const rw=wrap?.getBoundingClientRect(); const ra=area?.getBoundingClientRect(); const rm=main?.getBoundingClientRect(); const w=Math.max(320, Math.round(ra?.width||rw?.width||rm?.width||window.innerWidth||0)); const h=Math.max(320, Math.round(ra?.height||rw?.height||rm?.height||window.innerHeight||0)); return {w,h,cx:w*.5,cy:h*.52,nodeCy:h*.58}}
+function brainCenter(){ const m=metrics(); const b=getBrain()||{x:m.cx,y:m.cy}; const x=Math.max(60,Math.min(m.w-60,b.x)); const y=Math.max(60,Math.min(m.h-60,b.y)); if(!b||b.x!==x||b.y!==y) setBrain({x,y}); return {x,y}; }
+function ensurePos(){const ps=getPos(), ns=topicNodes(), m=metrics(); const r=Math.min(260,120+ns.length*18); ns.forEach((n,i)=>{ if(!ps[n.id]){ const a=(Math.PI*2*i)/Math.max(ns.length,1); ps[n.id]={x:m.cx+Math.cos(a)*r,y:m.nodeCy+Math.sin(a)*r*.58,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2}; } else { if(typeof ps[n.id].vx!=='number') ps[n.id].vx=(Math.random()-.5)*.2; if(typeof ps[n.id].vy!=='number') ps[n.id].vy=(Math.random()-.5)*.2; if(typeof ps[n.id].x!=='number'||typeof ps[n.id].y!=='number'){ const a=(Math.PI*2*i)/Math.max(ns.length,1); ps[n.id].x=m.cx+Math.cos(a)*r; ps[n.id].y=m.nodeCy+Math.sin(a)*r*.58; } }}); setPos(ps)}
+function draw(){const cv=canvas,ctx=cv.getContext('2d'),m=metrics(),dpr=window.devicePixelRatio||1; cv.width=Math.round(m.w*dpr); cv.height=Math.round(m.h*dpr); cv.style.width=m.w+'px'; cv.style.height=m.h+'px'; ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,m.w,m.h); const ns=topicNodes(), ps=getPos(), b=brainCenter(); for(let i=0;i<ns.length;i++){ for(let j=i+1;j<ns.length;j++){const a=ns[i],c=ns[j]; const sameCategory=(a.categories||[]).some(x=>(c.categories||[]).includes(x)); const shared=(a.tags||[]).filter(t=>(c.tags||[]).includes(t)).length; if(sameCategory || shared){const light=document.body.classList.contains('light'); ctx.strokeStyle=sameCategory ? (light?'rgba(148,163,184,.55)':'rgba(96,165,250,.35)') : (light?'rgba(99,102,241,.45)':'rgba(167,139,250,.45)'); ctx.lineWidth=sameCategory?1.6:(1+shared*.8); ctx.beginPath(); ctx.moveTo(ps[a.id].x,ps[a.id].y); ctx.lineTo(ps[c.id].x,ps[c.id].y); ctx.stroke();}} } for(const n of ns){ const light=document.body.classList.contains('light'); ctx.strokeStyle=light?'rgba(148,163,184,.75)':'rgba(120,170,255,.55)'; ctx.lineWidth=1.8; ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(ps[n.id].x,ps[n.id].y); ctx.stroke(); }}
+function renderNodes(){nodes.innerHTML=''; const ns=topicNodes(), ps=getPos(); ns.forEach(n=>{ if(!ps[n.id]) ps[n.id]={x:metrics().cx,y:metrics().cy,vx:0,vy:0}; const d=document.createElement('div'); d.className='node'; d.dataset.id=n.id; d.style.left=ps[n.id].x+'px'; d.style.top=ps[n.id].y+'px'; d.innerHTML=`<span class="node-dot" style="background:${n.color||'#60a5fa'}"></span><span>${n.title}</span>`; let sx,sy,ox,oy,drag=false,moved=false; d.onmousedown=e=>{e.preventDefault(); sx=e.clientX; sy=e.clientY; ox=ps[n.id].x; oy=ps[n.id].y; drag=true; moved=false; document.onmousemove=m=>{ if(!drag) return; const nx=ox+(m.clientX-sx), ny=oy+(m.clientY-sy); if(Math.abs(m.clientX-sx)>4||Math.abs(m.clientY-sy)>4) moved=true; ps[n.id].x=nx; ps[n.id].y=ny; d.style.left=nx+'px'; d.style.top=ny+'px'; setPos(ps); draw()}; document.onmouseup=()=>{drag=false; document.onmousemove=null; document.onmouseup=null; if(!moved){ const app=document.querySelector('.app'); if(app.classList.contains('sidebar-hidden')) app.classList.remove('sidebar-hidden'); setTimeout(()=>showDetail(n),120);} };}; d.ondblclick=e=>{e.preventDefault(); const app=document.querySelector('.app'); if(app.classList.contains('sidebar-hidden')) app.classList.remove('sidebar-hidden'); setTimeout(()=>showDetail(n),80);}; nodes.appendChild(d)})}
+function animate(){const ns=topicNodes(), ps=getPos(), m=metrics(), b=brainCenter(), t=Date.now()*0.001; const minSide=Math.min(m.w,m.h); const n=Math.max(ns.length,1); const baseFar=Math.min(Math.max(280, minSide*0.45), minSide*0.60); const crowdPull=Math.min(70, Math.max(0,(n-10)*2.2)); const baseR=Math.max(210, baseFar-crowdPull); // ưu tiên vòng rộng, chỉ co nhẹ khi quá đông
+// orbit target
+ns.forEach((nObj,i)=>{const p=ps[nObj.id]; if(!p) return; if(typeof p.vx!=='number') p.vx=(Math.random()-.5)*.2; if(typeof p.vy!=='number') p.vy=(Math.random()-.5)*.2; const lane=i%4; const laneOffset=(lane-1.5)*26; const angle=t*0.24 + i*((Math.PI*2)/Math.max(ns.length,1)); const orbitR=baseR + laneOffset + Math.sin(t*0.4 + i*0.7)*10; const targetX=b.x + Math.cos(angle) * orbitR; const targetY=b.y + Math.sin(angle) * (orbitR*0.82); p.vx+=(targetX-p.x)*0.00062; p.vy+=(targetY-p.y)*0.00062;});
+// repulsion to find empty space
+for(let i=0;i<ns.length;i++){ const a=ps[ns[i].id]; if(!a) continue; for(let j=i+1;j<ns.length;j++){ const c=ps[ns[j].id]; if(!c) continue; let dx=a.x-c.x, dy=a.y-c.y; const d2=dx*dx+dy*dy+0.01; const d=Math.sqrt(d2); const minDist=96; if(d<minDist){ const force=(minDist-d)/minDist*0.07; const ux=dx/d, uy=dy/d; a.vx+=ux*force; a.vy+=uy*force; c.vx-=ux*force; c.vy-=uy*force; } } }
+// integrate + bounds
+ns.forEach(nObj=>{const p=ps[nObj.id]; if(!p) return; p.vx*=.955; p.vy*=.955; p.x+=p.vx; p.y+=p.vy; const pad=34; if(p.x<pad){p.x=pad;p.vx=Math.abs(p.vx)*0.6;} if(p.x>m.w-pad){p.x=m.w-pad;p.vx=-Math.abs(p.vx)*0.6;} if(p.y<pad){p.y=pad;p.vy=Math.abs(p.vy)*0.6;} if(p.y>m.h-pad){p.y=m.h-pad;p.vy=-Math.abs(p.vy)*0.6;} }); setPos(ps); document.querySelectorAll('.node').forEach(el=>{const p=ps[el.dataset.id]; if(p){el.style.left=p.x+'px'; el.style.top=p.y+'px'}}); draw(); requestAnimationFrame(animate)}
+function initBrain(){const b=brainCenter(); brain.style.left=b.x+'px'; brain.style.top=b.y+'px'; let sx,sy,ox,oy,drag=false; brain.onmousedown=e=>{e.preventDefault(); const cur=brainCenter(); sx=e.clientX; sy=e.clientY; ox=cur.x; oy=cur.y; drag=true; document.onmousemove=m=>{ if(!drag) return; const mm=metrics(); const nx=Math.max(60,Math.min(mm.w-60,ox+(m.clientX-sx))), ny=Math.max(60,Math.min(mm.h-60,oy+(m.clientY-sy))); brain.style.left=nx+'px'; brain.style.top=ny+'px'; setBrain({x:nx,y:ny}); draw()}; document.onmouseup=()=>{drag=false; document.onmousemove=null; document.onmouseup=null}}}
+function showDetail(n){detail.style.display='block'; detail.innerHTML=`<b>${n.title}</b><div style='margin:8px 0'>${(n.tags||[]).map(t=>`<span class='tag'>#${t}</span>`).join('')}</div><div style='white-space:pre-wrap'>${n.content||''}</div><div style='margin-top:10px'><button onclick="detail.style.display='none'">Ẩn</button></div>`}
+async function addNote(){const c=(category.value||categorySelect.value||'General').trim()||'General'; const t=title.value.trim(); const contentV=content.value.trim(); if(!t||!contentV) return; const tg=(tags.value||'').split(',').map(s=>s.trim()).filter(Boolean); const arr=getNotes(); if(editingNoteId){ const n=arr.find(x=>x.id===editingNoteId); if(!n) return; n.content=contentV; n.tags=tg; n.updated_at=new Date().toISOString(); await saveNotesAndRefresh(arr); editingNoteId=null; saveBtn.textContent='Lưu'; editHint.classList.add('hidden'); content.value=''; tags.value=''; return; } arr.push({id:'n'+Date.now(),category:c,title:t,content:contentV,tags:tg}); await saveNotesAndRefresh(arr); title.value=''; tags.value=''; content.value=''; if(!categorySelect.value) category.value='';}
+
+const BQ_HIST='sb_bq_history';
+const BQ_MEM='sb_bq_memory';
+let bqLoading=false;
+function getBQHist(){ return JSON.parse(localStorage.getItem(BQ_HIST)||'[]'); }
+function setBQHist(v){ localStorage.setItem(BQ_HIST, JSON.stringify(v.slice(-30))); }
+function getBQMem(){ return JSON.parse(localStorage.getItem(BQ_MEM)||'[]'); }
+function setBQMem(v){ localStorage.setItem(BQ_MEM, JSON.stringify(v.slice(-100))); }
+function openBrainQuery(){ brainQueryPanel.classList.add('open'); renderBrainQueryLog(); setTimeout(()=>brainQueryInput.focus(),120); }
+function closeBrainQuery(){ brainQueryPanel.classList.remove('open'); }
+function clearBrainQueryMemory(){ localStorage.removeItem(BQ_HIST); localStorage.removeItem(BQ_MEM); renderBrainQueryLog(); }
+async function copyBrainReply(text, btn){ const value=String(text||''); try{ await navigator.clipboard.writeText(value); }catch(_){ const ta=document.createElement('textarea'); ta.value=value; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); try{ document.execCommand('copy'); }catch(e){} ta.remove(); } if(btn){ const old=btn.textContent; btn.textContent='Đã copy'; setTimeout(()=>btn.textContent=old,900); } }
+document.addEventListener('click',(e)=>{ const btn=e.target.closest('.copy-reply'); if(!btn) return; e.preventDefault(); copyBrainReply(btn.getAttribute('data-copy')||'', btn); });
+
+function escapeHtml(str){ return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function renderMarkdown(text){
+  let t = escapeHtml(text||'');
+  t = t.replace(/^###\s(.+)$/gm,'<h4>$1</h4>');
+  t = t.replace(/^##\s(.+)$/gm,'<h3>$1</h3>');
+  t = t.replace(/^#\s(.+)$/gm,'<h2>$1</h2>');
+  t = t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  t = t.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  t = t.replace(/`([^`]+)`/g,'<code>$1</code>');
+  t = t.replace(/^\s*[-*]\s(.+)$/gm,'• $1');
+  return t.replace(/\n/g,'<br>');
+}
+
+function renderBrainQueryLog(){ const hist=getBQHist(); let html = hist.length ? hist.map(m=>{ const encoded=encodeURIComponent(m.content||''); return `<div class="chat-row ${m.role}"><div class="chat-bubble"><div class="role-badge ${m.role}">${m.role==='user'?'ÔNG CHỦ':'BRAIN'}</div><div class="chat-text">${renderMarkdown(m.content||'')}</div>${m.role==='assistant'?`<button class="copy-reply" data-copy="${encoded}">Copy</button>`:''}</div></div>`; }).join('') : '<div class="hint">Chưa có hội thoại</div>'; if(bqLoading){ html += `<div class="chat-row assistant"><div class="chat-bubble"><div class="role-badge assistant">BRAIN</div><div class="typing"><span></span><span></span><span></span></div></div></div>`; } brainQueryLog.innerHTML = html; brainQueryLog.querySelectorAll('.copy-reply').forEach(btn=>{ btn.setAttribute('data-copy', decodeURIComponent(btn.getAttribute('data-copy')||'')); }); brainQueryLog.scrollTop=brainQueryLog.scrollHeight; }
+async function sendBrainQuery(){ const q=(brainQueryInput.value||'').trim(); if(!q || bqLoading) return; const hist=getBQHist(); const mem=getBQMem(); hist.push({role:'user',content:q}); setBQHist(hist); brainQueryInput.value=''; bqLoading=true; renderBrainQueryLog(); try{ const resp=await fetch('/.netlify/functions/brain-query',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({question:q,history:hist,memory:mem})}); const raw=await resp.text(); let data={}; try{ data=JSON.parse(raw); }catch(_){ data={ error: raw?.slice?.(0,500) || 'Phản hồi không hợp lệ từ server' }; } const errMsg = data.error || data.message || data.detail || (typeof raw==='string' && raw.trim()? raw.trim().slice(0,500):'Lỗi không xác định'); const ans=data.answer || (!resp.ok ? ('Lỗi: '+errMsg) : null) || ('Lỗi: '+errMsg); hist.push({role:'assistant',content:ans}); setBQHist(hist); mem.push({q,a:ans,ts:new Date().toISOString()}); setBQMem(mem); bqLoading=false; renderBrainQueryLog(); }catch(e){ hist.push({role:'assistant',content:'Lỗi kết nối Brain Query: '+(e.message||e)}); setBQHist(hist); bqLoading=false; renderBrainQueryLog(); }}
+
+function toggleComposer(){composerOpen=!composerOpen; document.getElementById('composer').classList.toggle('hidden', !composerOpen)}
+function toggleSearch(){searchOpen=!searchOpen; document.getElementById('searchWrap').classList.toggle('hidden', !searchOpen); if(searchOpen) document.getElementById('search').focus(); else { document.getElementById('search').value=''; renderAll(); }}
+function toggleSidebar(){document.querySelector('.app').classList.toggle('sidebar-hidden'); const pulse=()=>{renderAll(); requestAnimationFrame(renderAll)}; pulse(); setTimeout(pulse,80); setTimeout(pulse,220);}
+function renderAll(){refreshForm(); renderTree(); ensurePos(); initBrain(); renderNodes(); draw()}
+categorySelect.onchange=()=>{ if(categorySelect.value) category.value=categorySelect.value };
+async function bootstrapNotes(){ const server=await loadServerNotes(); if(Array.isArray(server)){ setNotes(server); renderAll(); return; } setNotes([]); renderAll(); }
+let isComposing=false;
+async function pullServerNotes(){ if(isComposing||saveInFlight||pendingServerNotes) return; const server=await loadServerNotes(); if(Array.isArray(server)){ setNotes(server); renderAll(); } }
+content.addEventListener('focus',()=>{isComposing=true}); content.addEventListener('blur',()=>{isComposing=false}); saveBtn.onclick=addNote; window.onresize=renderAll; initTheme(); bootstrapNotes(); setInterval(pullServerNotes,15000); animate(); initAuth();
+</script></body></html>
